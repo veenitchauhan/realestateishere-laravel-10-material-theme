@@ -40,12 +40,11 @@
                     </a>
                 </li>
                 <li class="nav-item dropdown pe-2 d-flex align-items-center">
-                    <a href="javascript:;" class="nav-link text-body p-0 d-flex align-items-center"
+                    <a href="javascript:;" class="nav-link text-body p-2 d-flex align-items-center border-radius-md bg-light"
                         id="userDropdownButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="avatar avatar-sm me-2">
-                            <img src="{{ asset('assets') }}/img/team-2.jpg" class="avatar avatar-sm rounded-circle">
-                        </div>
-                        <i class="fa fa-chevron-down text-xs"></i>
+                        <i class="fa fa-user me-2 text-dark"></i>
+                        <span class="text-dark font-weight-bold d-none d-md-inline">{{ auth()->user()->name }}</span>
+                        <i class="fa fa-chevron-down text-xs ms-2 text-dark"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end px-2 py-3 me-sm-n4 border-radius-lg shadow-lg"
                         aria-labelledby="userDropdownButton" style="min-width: 160px;">

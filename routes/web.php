@@ -78,4 +78,6 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::resource('permissions', App\Http\Controllers\ACL\PermissionController::class);
 
 	Route::resource('roles', App\Http\Controllers\ACL\RoleController::class);
+
+	Route::resource('users', App\Http\Controllers\UserController::class);
 });
