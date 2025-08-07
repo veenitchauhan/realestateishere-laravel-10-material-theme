@@ -105,4 +105,43 @@ class UserController extends Controller
         $user->delete();
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
+
+    /**
+     * Impersonate a user (Super Admin only)
+     */
+    public function impersonate(User $user)
+    {
+        // Prevent self-impersonation
+        if ($user->id === auth()->id()) {
+            return redirect()->back()->with('error', 'You cannot impersonate yourself.');
+        }
+
+        // Prevent impersonating Super Admin (unless you're already a Super Admin impersonating someone else)
+        if ($user->hasRole('Super Admin') && !session()->has('impersonate_original_id')) {
+            return redirect()->back()->with('error', 'You cannot impersonate another Super Admin.');
+        }
+
+        // Store original user ID in session
+        session()->put('impersonate_original_id', auth()->id());
+        
+        // Login as the target user
+        auth()->loginUsingId($user->id);
+
+        return redirect()->route('dashboard')->with('success', "You are now logged in as {$user->name}. Click 'Stop Impersonating' to return to your account.");
+    }
+
+    /**
+     * Stop impersonating and return to original user
+     */
+    public function stopImpersonating()
+    {
+        $originalUserId = session()->pull('impersonate_original_id');
+        
+        if ($originalUserId) {
+            auth()->loginUsingId($originalUserId);
+            return redirect()->route('dashboard')->with('success', 'You have stopped impersonating and returned to your account.');
+        }
+
+        return redirect()->route('dashboard')->with('error', 'No impersonation session found.');
+    }
 }

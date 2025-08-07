@@ -9,8 +9,18 @@
                     <div class="card">
                         <div class="card-header pb-0">
                             <div class="d-flex justify-content-between">
-                                <h6>User Details</h6>
+                                <h6>👤 User Details</h6>
                                 <div>
+                                    @can('edit-users')
+                                        @if(auth()->user()->hasRole('Super Admin') && $user->id !== auth()->id())
+                                            <form method="POST" action="{{ route('users.impersonate', $user) }}" style="display: inline;">
+                                                @csrf
+                                                <button type="submit" class="btn bg-gradient-info btn-sm me-1" title="Login as this user">
+                                                    <i class="material-icons text-sm">login</i> Login as User
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endcan
                                     <a href="{{ route('users.edit', $user) }}" class="btn btn-warning btn-sm">Edit</a>
                                     <a href="{{ route('users.index') }}" class="btn btn-secondary btn-sm">Back to Users</a>
                                 </div>

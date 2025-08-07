@@ -22,26 +22,31 @@
             </a>
         </li>
 
+        @can('view-permissions')
         <li class="nav-item">
             <a class="nav-link text-white {{ $activePage == 'permissions' ? ' active bg-gradient-primary' : '' }} "
                 href="{{ route('permissions.index') }}">
                 <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-                    <i class="material-icons opacity-10">dashboard</i>
+                    <i class="material-icons opacity-10">security</i>
                 </div>
                 <span class="nav-link-text ms-1">Permissions</span>
             </a>
         </li>
+        @endcan
 
+        @can('view-roles')
         <li class="nav-item">
             <a class="nav-link text-white {{ $activePage == 'roles' ? ' active bg-gradient-primary' : '' }} "
                 href="{{ route('roles.index') }}">
                 <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-                    <i class="material-icons opacity-10">dashboard</i>
+                    <i class="material-icons opacity-10">admin_panel_settings</i>
                 </div>
                 <span class="nav-link-text ms-1">Roles</span>
             </a>
         </li>
+        @endcan
 
+        @can('view-users')
         <li class="nav-item">
             <a class="nav-link text-white {{ $activePage == 'users' ? ' active bg-gradient-primary' : '' }} "
                 href="{{ route('users.index') }}">
@@ -51,5 +56,30 @@
                 <span class="nav-link-text ms-1">Users</span>
             </a>
         </li>
+        @endcan
+
+        @can('view-properties')
+        <li class="nav-item">
+            <a class="nav-link text-white {{ $activePage == 'properties' ? ' active bg-gradient-primary' : '' }} "
+                href="{{ route('properties.index') }}">
+                <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                    <i class="material-icons opacity-10">home</i>
+                </div>
+                <span class="nav-link-text ms-1">Properties</span>
+            </a>
+        </li>
+        @endcan
+
+        @can('view-reports')
+        <li class="nav-item">
+            <a class="nav-link text-white {{ $activePage == 'reports' ? ' active bg-gradient-primary' : '' }} "
+                href="{{ route('reports') }}">
+                <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                    <i class="material-icons opacity-10">analytics</i>
+                </div>
+                <span class="nav-link-text ms-1">Reports</span>
+            </a>
+        </li>
+        @endcan
     </ul>
 </aside>

@@ -10,13 +10,23 @@
                 <div class="col-12">
                     <div class="card my-4">
                         <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                            <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
+                            <div class="bg-gradient-primary shadow-primary border-radius-lg pt-3 pb-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h6 class="text-white text-capitalize ps-3 mb-0">Users Management</h6>
                                     <div class="me-3">
+                                        @role('Super Admin')
                                         <a href="{{ route('users.create') }}" class="btn btn-sm btn-outline-white mb-0">
                                             <i class="material-icons text-sm">add</i>&nbsp;&nbsp;Add New User
                                         </a>
+                                        @else
+                                        <span class="badge badge-sm bg-gradient-info">
+                                            @if(auth()->user()->hasRole('Admin'))
+                                                Admin View: Edit Only
+                                            @elseif(auth()->user()->hasRole('Manager'))
+                                                Manager View: Read Only
+                                            @endif
+                                        </span>
+                                        @endrole
                                     </div>
                                 </div>
                             </div>
@@ -70,9 +80,14 @@
                                                     <a href="{{ route('users.show', $user) }}" class="btn btn-info btn-sm mb-0 me-1" data-toggle="tooltip" data-original-title="View user">
                                                         <i class="material-icons text-sm">visibility</i>
                                                     </a>
+                                                    
+                                                    @role(['Super Admin', 'Admin'])
                                                     <a href="{{ route('users.edit', $user) }}" class="btn btn-warning btn-sm mb-0 me-1" data-toggle="tooltip" data-original-title="Edit user">
                                                         <i class="material-icons text-sm">edit</i>
                                                     </a>
+                                                    @endrole
+                                                    
+                                                    @role('Super Admin')
                                                     @if($user->id !== auth()->id())
                                                         <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this user?')">
                                                             @csrf
@@ -82,6 +97,11 @@
                                                             </button>
                                                         </form>
                                                     @endif
+                                                    @endrole
+                                                    
+                                                    @role('Manager')
+                                                    <span class="badge badge-sm bg-gradient-secondary">Read Only</span>
+                                                    @endrole
                                                 </td>
                                             </tr>
                                         @empty

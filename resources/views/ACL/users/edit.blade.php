@@ -14,7 +14,7 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <form method="POST" action="{{ route('users.update', $user) }}">
+                            <form method="POST" action="{{ route('users.update', $user) }}" autocomplete="off">
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
@@ -86,7 +86,11 @@
                                                     <div class="form-check">
                                                         <input type="checkbox" name="roles[]" value="{{ $role->name }}" 
                                                                id="role_{{ $role->id }}" class="form-check-input"
-                                                               {{ in_array($role->name, old('roles', $user->roles->pluck('name')->toArray())) ? 'checked' : '' }}>
+                                                               @if(old('roles'))
+                                                                   {{ in_array($role->name, old('roles')) ? 'checked' : '' }}
+                                                               @else
+                                                                   {{ $user->hasRole($role->name) ? 'checked' : '' }}
+                                                               @endif>
                                                         <label for="role_{{ $role->id }}" class="form-check-label">
                                                             {{ $role->name }}
                                                         </label>
@@ -107,4 +111,27 @@
             </div>
         </div>
     </main>
+
+    <script>
+        // Firefox form state reset
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Page was loaded from cache (Firefox bfcache)
+                window.location.reload();
+            }
+        });
+        
+        // Additional Firefox checkbox reset
+        document.addEventListener('DOMContentLoaded', function() {
+            // Force reset all checkboxes to their server-rendered state
+            setTimeout(function() {
+                const checkboxes = document.querySelectorAll('input[type="checkbox"][name="roles[]"]');
+                checkboxes.forEach(function(checkbox) {
+                    // Get the original checked state from the server-rendered HTML
+                    const shouldBeChecked = checkbox.hasAttribute('checked');
+                    checkbox.checked = shouldBeChecked;
+                });
+            }, 100);
+        });
+    </script>
 </x-layout>

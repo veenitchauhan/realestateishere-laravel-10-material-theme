@@ -40,8 +40,6 @@ Route::get('/reset-password/{token}', function ($token) {
 	return view('sessions.password.reset', ['token' => $token]);
 })->middleware('guest')->name('password.reset');
 
-Route::resource('permissions', App\Http\Controllers\ACL\PermissionController::class);
-
 Route::post('sign-out', [SessionsController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::get('profile', [ProfileController::class, 'create'])->middleware('auth')->name('profile');
 Route::post('user-profile', [ProfileController::class, 'update'])->middleware('auth');
@@ -75,9 +73,35 @@ Route::group(['middleware' => 'auth'], function () {
 		return view('pages.laravel-examples.user-profile');
 	})->name('user-profile');
 
-	Route::resource('permissions', App\Http\Controllers\ACL\PermissionController::class);
+	// 🔒 PERMISSION-BASED ACCESS CONTROL - Real Granular Control! 🔒
+	
+	// Permissions Management - Super Admin only (can manage all permissions)
+	Route::resource('permissions', App\Http\Controllers\ACL\PermissionController::class)
+		->middleware(['permission:view-permissions']);
+		
+	// Roles Management - Super Admin and Admin (but with different capabilities)
+	Route::resource('roles', App\Http\Controllers\ACL\RoleController::class)
+		->middleware(['permission:view-roles']);
+		
+	// Users Management - Hierarchical permissions
+	Route::resource('users', App\Http\Controllers\UserController::class)
+		->middleware(['permission:view-users']);
+	
+	// User Impersonation - Super Admin only
+	Route::post('users/{user}/impersonate', [App\Http\Controllers\UserController::class, 'impersonate'])
+		->middleware(['auth', 'role:Super Admin'])
+		->name('users.impersonate');
+	
+	Route::get('stop-impersonating', [App\Http\Controllers\UserController::class, 'stopImpersonating'])
+		->middleware('auth')
+		->name('stop-impersonating');
 
-	Route::resource('roles', App\Http\Controllers\ACL\RoleController::class);
-
-	Route::resource('users', App\Http\Controllers\UserController::class);
+	// Properties Management - Real Estate Core Functionality
+	Route::resource('properties', App\Http\Controllers\PropertyController::class)
+		->middleware(['permission:show-property']);
+	
+	// Reports - For users with reporting permissions
+	Route::get('/reports', function () {
+		return view('reports.index');
+	})->middleware('permission:view-reports')->name('reports');
 });
