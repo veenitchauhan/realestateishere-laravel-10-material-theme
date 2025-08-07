@@ -58,7 +58,7 @@
         </li>
         @endcan
 
-        @can('view-properties')
+        @can('show-property')
         <li class="nav-item">
             <a class="nav-link text-white {{ $activePage == 'properties' ? ' active bg-gradient-primary' : '' }} "
                 href="{{ route('properties.index') }}">

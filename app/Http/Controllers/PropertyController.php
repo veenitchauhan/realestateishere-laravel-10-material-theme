@@ -19,7 +19,7 @@ class PropertyController extends Controller
     {
         $this->authorize('show-property');
         
-        $properties = Property::with('creator')->latest()->paginate(10);
+        $properties = Property::with('creator')->latest()->paginate(5);
         
         return view('properties.index', compact('properties'));
     }
@@ -71,6 +71,9 @@ class PropertyController extends Controller
     public function show(Property $property)
     {
         $this->authorize('show-property');
+        
+        // Load the user relationship
+        $property->load('creator');
         
         return view('properties.show', compact('property'));
     }

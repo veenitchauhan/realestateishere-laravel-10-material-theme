@@ -15,20 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // Run role and permission seeder first
-        $this->call([
-            RolePermissionSeeder::class,
-        ]);
+        // Create roles first
+        $superAdminRole = \Spatie\Permission\Models\Role::create(['name' => 'Super Admin']);
+        $adminRole = \Spatie\Permission\Models\Role::create(['name' => 'Admin']);
+        $dealerRole = \Spatie\Permission\Models\Role::create(['name' => 'Dealer']);
 
-        // Then create additional users
-        User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@material.com',
-            'password' => ('secret')
-        ]);
-
+        // Run other seeders
         $this->call([
-            DemoUsersSeeder::class,
+            PermissionSeeder::class,
+            SuperAdminSeeder::class,
         ]);
     }
 }

@@ -130,13 +130,23 @@
                                                 <td>
                                                     <div class="d-flex px-2 py-1">
                                                         <div class="d-flex flex-column justify-content-center">
-                                                            <h6 class="mb-0 text-sm">{{ $role->name }}</h6>
+                                                            <h6 class="mb-0 text-sm">
+                                                                {{ $role->name }}
+                                                                @if($role->name === 'Super Admin')
+                                                                    <span class="badge badge-sm bg-gradient-warning ms-2">Protected</span>
+                                                                @endif
+                                                            </h6>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div class="d-flex flex-wrap">
-                                                        @if($role->permissions->count() > 0)
+                                                        @if($role->name === 'Super Admin')
+                                                            <span class="badge bg-gradient-success me-1 mb-1">
+                                                                <i class="material-icons text-xs me-1">star</i>
+                                                                All Permissions (Automatic)
+                                                            </span>
+                                                        @elseif($role->permissions->count() > 0)
                                                             @foreach($role->permissions as $permission)
                                                                 <span class="badge bg-gradient-info me-1 mb-1">{{ $permission->name }}</span>
                                                             @endforeach
@@ -149,19 +159,28 @@
                                                     <span class="text-secondary text-xs font-weight-bold">{{ $role->created_at->format('M d, Y') }}</span>
                                                 </td>
                                                 <td class="align-middle">
-                                                    <div class="d-flex align-items-center">
-                                                        <a href="{{ route('roles.edit', $role) }}" class="btn btn-warning btn-sm me-2">
-                                                            <i class="material-icons text-sm">edit</i>
-                                                        </a>
-                                                        <form action="{{ route('roles.destroy', $role) }}" method="post" style="display: inline;">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-danger btn-sm" 
-                                                                    onclick="return confirm('Are you sure you want to delete the role: {{ $role->name }}? This action cannot be undone.')">
-                                                                <i class="material-icons text-sm">delete</i>
-                                                            </button>
-                                                        </form>
-                                                    </div>
+                                                    @if($role->name === 'Super Admin')
+                                                        <div class="d-flex align-items-center">
+                                                            <span class="badge bg-gradient-secondary">
+                                                                <i class="material-icons text-xs me-1">lock</i>
+                                                                System Role
+                                                            </span>
+                                                        </div>
+                                                    @else
+                                                        <div class="d-flex align-items-center">
+                                                            <a href="{{ route('roles.edit', $role) }}" class="btn btn-warning btn-sm me-2">
+                                                                <i class="material-icons text-sm">edit</i>
+                                                            </a>
+                                                            <form action="{{ route('roles.destroy', $role) }}" method="post" style="display: inline;">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-danger btn-sm" 
+                                                                        onclick="return confirm('Are you sure you want to delete the role: {{ $role->name }}? This action cannot be undone.')">
+                                                                    <i class="material-icons text-sm">delete</i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @empty

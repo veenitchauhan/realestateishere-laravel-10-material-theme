@@ -135,18 +135,16 @@
                                 </table>
                             </div>
                             
-                            <!-- Pagination -->
+                            <!-- Beautiful Custom Pagination -->
                             @if($properties->hasPages())
-                            <div class="d-flex justify-content-center mt-3">
-                                {{ $properties->links() }}
+                            <div class="mt-4">
+                                {{ $properties->links('custom-pagination') }}
                             </div>
                             @endif
                         </div>
                     </div>
                 </div>
             </div>
-
-            <x-footers.auth></x-footers.auth>
         </div>
     </main>
     <x-plugins></x-plugins>
