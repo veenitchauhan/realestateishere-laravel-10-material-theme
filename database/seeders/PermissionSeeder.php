@@ -18,9 +18,15 @@ class PermissionSeeder extends Seeder
     {
         $this->command->info('🧹 Cleaning existing permissions and roles...');
         
-        // Truncate permissions and roles tables (resets auto-increment)
+        // Option 1: Using truncate with foreign key checks disabled
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         \Spatie\Permission\Models\Permission::truncate();
         \Spatie\Permission\Models\Role::truncate();
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        
+        // Option 2: Using delete (safer, handles foreign keys automatically)
+        // \Spatie\Permission\Models\Permission::query()->delete();
+        // \Spatie\Permission\Models\Role::query()->delete();
 
         $this->command->info('🔧 Creating roles first...');
         
