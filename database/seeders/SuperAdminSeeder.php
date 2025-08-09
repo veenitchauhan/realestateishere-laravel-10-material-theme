@@ -16,29 +16,22 @@ class SuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->command->info('🧹 Cleaning existing demo users...');
-        
-        // Disable foreign key checks temporarily
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        
-        // Truncate users table (this will reset auto-increment)
-        User::truncate();
-        
-        // Re-enable foreign key checks
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        $this->command->info('👤 Creating/Updating Super Admin user...');
 
-        $this->command->info('👤 Creating Super Admin user...');
+        // Create or update super admin user
 
         // Create/Update Super Admin User
-        $superAdmin = User::create([
-            'name' => 'Veenit Chauhan',
-            'email' => 'veenitchauhan@gmail.com',
-            'password' => 'V1n1_P@ssw0rd', // No need for Hash::make() - model handles it
-            'phone' => '+917508122311',
-            'location' => 'Panchkula, India',
-            'about' => 'Super Admin user - Has all permissions and controls the entire system',
-            'email_verified_at' => now(),
-        ]);
+        $superAdmin = User::firstOrCreate(
+            ['email' => 'veenitchauhan@gmail.com'],
+            [
+                'name' => 'Veenit Chauhan',
+                'password' => 'V1n1_P@ssw0rd', // No need for Hash::make() - model handles it
+                'phone' => '+917508122311',
+                'location' => 'Panchkula, India',
+                'about' => 'Super Admin user - Has all permissions and controls the entire system',
+                'email_verified_at' => now(),
+            ]
+        );
         
         // Assign Super Admin role
         $superAdminRole = Role::findByName('Super Admin');
