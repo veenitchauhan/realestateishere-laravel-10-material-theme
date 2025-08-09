@@ -284,26 +284,396 @@
             <x-footers.auth></x-footers.auth>
         </div>
     </main>
-    </main>
     <x-plugins></x-plugins>
     
-    <!-- Include JavaScript files via Vite -->
-    @vite(['resources/js/properties/common.js', 'resources/js/properties/create.js'])
-    
-    <!-- Initialize page-specific data -->
     <script>
-        // Add main image slot hidden input if it doesn't exist
-        if (!document.getElementById('mainImageSlot')) {
-            const form = document.querySelector('form');
-            if (form) {
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = 'main_image_slot';
-                hiddenInput.id = 'mainImageSlot';
-                hiddenInput.value = '1';
-                form.appendChild(hiddenInput);
+        let currentMainImage = 1;
+        let uploadedImages = {};
+        let nextSlotToShow = 2; // Start from slot 2 (slot 1 is already visible)
+
+        function addOneMoreSlot() {
+            // Create a temporary file input to select image
+            const tempInput = document.createElement('input');
+            tempInput.type = 'file';
+            tempInput.accept = 'image/*';
+            tempInput.style.display = 'none';
+            
+            tempInput.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select a valid image file.');
+                    return;
+                }
+                
+                // Find next available slot number
+                let nextSlotNumber = 2;
+                while (nextSlotNumber <= 12 && uploadedImages[nextSlotNumber]) {
+                    nextSlotNumber++;
+                }
+                
+                if (nextSlotNumber > 12) {
+                    alert('Maximum 12 images allowed.');
+                    return;
+                }
+                
+                // Show the slot
+                const nextSlot = document.getElementById(`slot${nextSlotNumber}`);
+                if (nextSlot) {
+                    nextSlot.classList.remove('d-none');
+                    
+                    // Set the file to the actual input
+                    const realInput = nextSlot.querySelector('input[type="file"]');
+                    if (realInput) {
+                        // Create a new FileList with our file
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        realInput.files = dt.files;
+                        
+                        // Trigger the upload process
+                        handleImageUpload(nextSlotNumber, realInput);
+                    }
+                    
+                    // Update nextSlotToShow for next time
+                    nextSlotToShow = nextSlotNumber + 1;
+                    updateAddMoreButton();
+                    moveAddMoreButtonToEnd();
+                }
+                
+                // Clean up temp input
+                document.body.removeChild(tempInput);
+            };
+            
+            // Trigger file selection
+            document.body.appendChild(tempInput);
+            tempInput.click();
+        }
+
+        function updateAddMoreButton() {
+            const remainingSlots = 12 - (nextSlotToShow - 1);
+            const addMoreSlot = document.getElementById('addMoreSlot');
+            
+            if (remainingSlots > 0) {
+                addMoreSlot.innerHTML = `
+                    <div class="add-more-card border-2 border-dashed border-info rounded-3 d-flex align-items-center justify-content-center cursor-pointer" style="height: 120px; background-color: #f0f8ff;" onclick="addOneMoreSlot()">
+                        <div class="text-center">
+                            <i class="material-icons text-info" style="font-size: 2rem;">add_circle_outline</i>
+                            <p class="text-xs text-info mb-0 fw-bold">Add More</p>
+                            <p class="text-xs text-muted mb-0">(${remainingSlots} more slots)</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Hide the add more button when all slots are visible
+                addMoreSlot.style.display = 'none';
             }
         }
+
+        function moveAddMoreButtonToEnd() {
+            const addMoreSlot = document.getElementById('addMoreSlot');
+            const thumbnailGrid = document.querySelector('#thumbnailGrid');
+            
+            // Move the "Add More" button to the end
+            thumbnailGrid.appendChild(addMoreSlot);
+        }
+
+        function handleImageUpload(slotNumber, input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload only image files (JPG, PNG, WebP)');
+                input.value = '';
+                return;
+            }
+
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image size should be less than 5MB');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageUrl = e.target.result;
+                uploadedImages[slotNumber] = imageUrl;
+
+                // Update the thumbnail
+                const label = document.querySelector(`label[for="image${slotNumber}"]`);
+                label.style.backgroundImage = `url(${imageUrl})`;
+                label.style.backgroundSize = 'cover';
+                label.style.backgroundPosition = 'center';
+                label.innerHTML = '';
+                
+                // Show control buttons
+                const controls = label.parentElement.querySelector('.image-controls');
+                controls.classList.remove('d-none');
+                
+                // If this is the first image uploaded, make it the main image
+                if (Object.keys(uploadedImages).length === 1) {
+                    setMainImage(slotNumber);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setMainImage(slotNumber) {
+            const imageUrl = uploadedImages[slotNumber];
+            if (!imageUrl) return;
+
+            // If this is already the first image, no need to do anything
+            if (slotNumber === 1) {
+                // Just ensure visual indicators are correct, but don't show toast
+                updateVisualIndicators();
+                return;
+            }
+
+            // Show success message only when actually changing main image
+            showSuccessMessage('Main image set successfully!');
+
+            // Reorder images: move selected image to first position
+            reorderImagesInCreateMode(slotNumber);
+            
+            // Update main preview with the new main image
+            updateMainPreview(imageUrl);
+            
+            // Update visual indicators
+            updateVisualIndicators();
+
+            // Update hidden input - first slot is now main
+            document.getElementById('mainImageSlot').value = 1;
+            currentMainImage = 1;
+        }
+
+        function reorderImagesInCreateMode(newMainSlotNumber) {
+            const thumbnailGrid = document.getElementById('thumbnailGrid');
+            const selectedSlot = document.getElementById(`slot${newMainSlotNumber}`);
+            const firstSlot = document.getElementById('slot1');
+            
+            if (!selectedSlot || !firstSlot || !thumbnailGrid) return;
+            
+            // Get the selected image data
+            const selectedImage = uploadedImages[newMainSlotNumber];
+            const selectedInput = selectedSlot.querySelector('input[type="file"]');
+            const selectedFiles = selectedInput ? selectedInput.files : null;
+            
+            // Get the first slot image data  
+            const firstImage = uploadedImages[1];
+            const firstInput = firstSlot.querySelector('input[type="file"]');
+            const firstFiles = firstInput ? firstInput.files : null;
+            
+            // Swap the images in uploadedImages object
+            uploadedImages[1] = selectedImage;
+            uploadedImages[newMainSlotNumber] = firstImage;
+            
+            // Swap the files in the inputs
+            if (selectedFiles && firstInput) {
+                const dt1 = new DataTransfer();
+                if (selectedFiles[0]) dt1.items.add(selectedFiles[0]);
+                firstInput.files = dt1.files;
+            }
+            
+            if (firstFiles && selectedInput) {
+                const dt2 = new DataTransfer();
+                if (firstFiles[0]) dt2.items.add(firstFiles[0]);
+                selectedInput.files = dt2.files;
+            } else if (selectedInput) {
+                // Clear the selected input if first slot was empty
+                selectedInput.value = '';
+            }
+            
+            // Update the visual display of both slots
+            updateSlotDisplay(1, selectedImage);
+            updateSlotDisplay(newMainSlotNumber, firstImage);
+        }
+
+        function updateSlotDisplay(slotNumber, imageUrl) {
+            const slot = document.getElementById(`slot${slotNumber}`);
+            if (!slot) return;
+            
+            const imageSlot = slot.querySelector('.image-slot');
+            const removeBtn = slot.querySelector('.btn-danger');
+            
+            if (imageUrl && imageSlot) {
+                // Show image
+                imageSlot.style.backgroundImage = `url(${imageUrl})`;
+                imageSlot.style.backgroundSize = 'cover';
+                imageSlot.style.backgroundPosition = 'center';
+                imageSlot.innerHTML = '';
+                if (removeBtn) removeBtn.style.display = 'block';
+            } else if (imageSlot) {
+                // Clear image
+                imageSlot.style.backgroundImage = 'none';
+                imageSlot.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100">
+                        <div class="text-center">
+                            <i class="material-icons text-muted mb-2" style="font-size: 2rem;">add_photo_alternate</i>
+                            <p class="text-xs text-muted mb-0">Click to upload</p>
+                        </div>
+                    </div>
+                `;
+                if (removeBtn) removeBtn.style.display = 'none';
+            }
+        }
+
+        function updateMainPreview(imageUrl) {
+            const mainPreview = document.getElementById('mainImagePreview');
+            mainPreview.style.backgroundImage = `url(${imageUrl})`;
+            mainPreview.style.backgroundSize = 'cover';
+            mainPreview.style.backgroundPosition = 'center';
+            mainPreview.innerHTML = '';
+        }
+
+        function updateVisualIndicators() {
+            // Remove all main image indicators
+            document.querySelectorAll('.image-slot').forEach(slot => {
+                slot.classList.remove('border-primary');
+                slot.style.borderWidth = '2px';
+            });
+
+            document.querySelectorAll('.btn-success, .btn-warning').forEach(btn => {
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-success');
+                if (btn.querySelector('i')) {
+                    btn.querySelector('i').textContent = 'star';
+                }
+            });
+
+            // Set first slot as main (it now has the main image)
+            const firstSlot = document.getElementById('slot1');
+            if (firstSlot && uploadedImages[1]) {
+                const imageSlot = firstSlot.querySelector('.image-slot');
+                const starBtn = firstSlot.querySelector('.btn-success');
+                
+                if (imageSlot) {
+                    imageSlot.classList.add('border-primary');
+                    imageSlot.style.borderWidth = '3px';
+                }
+                
+                if (starBtn) {
+                    starBtn.classList.remove('btn-success');
+                    starBtn.classList.add('btn-warning');
+                    if (starBtn.querySelector('i')) {
+                        starBtn.querySelector('i').textContent = 'star';
+                    }
+                }
+            }
+        }
+
+        function showSuccessMessage(message) {
+            // Create toast element if it doesn't exist
+            let toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                document.body.appendChild(toastContainer);
+            }
+            
+            const toastId = 'toast-' + Date.now();
+            const toastHTML = `
+                <div id="${toastId}" class="toast show" role="alert">
+                    <div class="toast-header bg-success text-white">
+                        <i class="material-icons me-2">check_circle</i>
+                        <strong class="me-auto">Success</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                const toast = document.getElementById(toastId);
+                if (toast) toast.remove();
+            }, 3000);
+        }
+
+        function removeImage(slotNumber) {
+            // Clear the uploaded image
+            delete uploadedImages[slotNumber];
+            
+            // Reset the input
+            document.getElementById(`image${slotNumber}`).value = '';
+            
+            // Reset the thumbnail
+            const label = document.querySelector(`label[for="image${slotNumber}"]`);
+            label.style.backgroundImage = '';
+            label.classList.remove('border-primary');
+            label.innerHTML = `
+                <div class="text-center">
+                    <i class="material-icons text-muted">add_a_photo</i>
+                    <p class="text-xs text-muted mb-0">Image ${slotNumber}</p>
+                </div>
+            `;
+            
+            // Hide control buttons
+            const controls = label.parentElement.querySelector('.image-controls');
+            controls.classList.add('d-none');
+
+            // Reset star button
+            const starBtn = controls.querySelector('.btn-success, .btn-warning');
+            starBtn.classList.remove('btn-warning');
+            starBtn.classList.add('btn-success');
+            starBtn.querySelector('i').textContent = 'star';
+            
+            // If this was the main image, update main preview
+            if (currentMainImage === slotNumber) {
+                const remainingImages = Object.keys(uploadedImages);
+                if (remainingImages.length > 0) {
+                    // Set first available image as main
+                    setMainImage(parseInt(remainingImages[0]));
+                } else {
+                    // No images left, reset main preview
+                    const mainPreview = document.getElementById('mainImagePreview');
+                    mainPreview.style.backgroundImage = '';
+                    mainPreview.innerHTML = `
+                        <div class="text-center">
+                            <i class="material-icons text-muted" style="font-size: 3rem;">add_photo_alternate</i>
+                            <p class="text-muted mb-0">Main Property Image</p>
+                            <small class="text-muted">Click on thumbnails below to set as main image</small>
+                        </div>
+                    `;
+                    currentMainImage = 1;
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Material Dashboard form elements for outline inputs only
+            var inputs = document.querySelectorAll('.input-group-outline input, .input-group-outline textarea');
+            
+            // Handle inputs and textareas with outline styling
+            inputs.forEach(function(input) {
+                // Check if field has value on load
+                if (input.value && input.value.trim() !== '') {
+                    input.parentElement.classList.add('is-filled');
+                }
+                
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('is-focused');
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('is-focused');
+                    if (this.value && this.value.trim() !== '') {
+                        this.parentElement.classList.add('is-filled');
+                    } else {
+                        this.parentElement.classList.remove('is-filled');
+                    }
+                });
+            });
+            
+            // Static inputs (like selects) don't need special handling
+            // They work with default browser styling
+        });
     </script>
 
     <style>

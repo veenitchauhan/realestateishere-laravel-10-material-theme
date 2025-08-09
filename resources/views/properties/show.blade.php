@@ -30,12 +30,39 @@
                             <!-- Property Image/Gallery Section -->
                             <div class="col-lg-8 mb-4">
                                 <div class="card shadow-sm">
-                                    <div class="card-body text-center">
-                                        <div class="bg-gradient-info border-radius-lg p-5 mb-3">
-                                            <i class="material-icons text-white" style="font-size: 4rem;">home</i>
-                                            <h4 class="text-white mt-2">Property Gallery</h4>
-                                            <p class="text-white opacity-8">Property images will be displayed here</p>
-                                        </div>
+                                    <div class="card-body">
+                                        @if($property->images && count($property->images) > 0)
+                                            <!-- Main Image Display -->
+                                            <div class="position-relative mb-3">
+                                                <img id="mainPropertyImage" src="{{ asset('storage/' . $property->images[0]) }}" alt="{{ $property->title }}" class="w-100 rounded-3" style="height: 400px; object-fit: cover;">
+                                                <div class="position-absolute top-0 end-0 m-3">
+                                                    <span class="badge bg-gradient-info px-3 py-2">
+                                                        <i class="material-icons text-sm me-1">photo_library</i>
+                                                        {{ count($property->images) }} {{ count($property->images) == 1 ? 'Photo' : 'Photos' }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Thumbnail Navigation -->
+                                            @if(count($property->images) > 1)
+                                            <div class="row">
+                                                @foreach($property->images as $index => $image)
+                                                <div class="col-3 mb-2">
+                                                    <img src="{{ asset('storage/' . $image) }}" alt="Property image {{ $index + 1 }}" class="w-100 rounded-3 cursor-pointer property-thumbnail @if($index == 0) border border-primary border-3 @endif" style="height: 80px; object-fit: cover;" onclick="changeMainImage('{{ asset('storage/' . $image) }}', {{ $index }})">
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                            @endif
+                                        @else
+                                            <!-- No Images Placeholder -->
+                                            <div class="text-center py-5">
+                                                <div class="bg-gradient-secondary border-radius-lg p-5 mb-3">
+                                                    <i class="material-icons text-white" style="font-size: 4rem;">image_not_supported</i>
+                                                    <h4 class="text-white mt-2">No Images Available</h4>
+                                                    <p class="text-white opacity-8">This property doesn't have any images yet</p>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -209,4 +236,34 @@
             </div>
         </div>
     </main>
+    
+    <script>
+        function changeMainImage(imageUrl, index) {
+            // Update the main image
+            document.getElementById('mainPropertyImage').src = imageUrl;
+            
+            // Update thumbnail borders
+            document.querySelectorAll('.property-thumbnail').forEach((thumb, i) => {
+                if (i === index) {
+                    thumb.classList.add('border', 'border-primary', 'border-3');
+                } else {
+                    thumb.classList.remove('border', 'border-primary', 'border-3');
+                }
+            });
+        }
+    </script>
+    
+    <style>
+        .cursor-pointer {
+            cursor: pointer;
+        }
+        
+        .property-thumbnail {
+            transition: all 0.3s ease;
+        }
+        
+        .property-thumbnail:hover {
+            transform: scale(1.05);
+        }
+    </style>
 </x-layout>

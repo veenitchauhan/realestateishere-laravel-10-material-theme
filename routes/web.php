@@ -67,8 +67,7 @@ Route::group(['middleware' => 'auth'], function () {
 		->name('stop-impersonating');
 
 	// Properties Management - Real Estate Core Functionality
-	Route::resource('properties', App\Http\Controllers\PropertyController::class)
-		->middleware(['permission:show-property']);
+	Route::resource('properties', App\Http\Controllers\PropertyController::class);
 	
 	// Reports - For users with reporting permissions
 	Route::get('/reports', [App\Http\Controllers\ReportsController::class, 'index'])

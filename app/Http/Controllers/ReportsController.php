@@ -17,34 +17,50 @@ class ReportsController extends Controller
 
     public function index()
     {
-        // Get real statistics from database
-        $totalProperties = Property::count();
-        $propertiesSold = Property::where('status', 'Sold')->count();
-        $propertiesRented = Property::where('status', 'Rented')->count();
-        $availableProperties = Property::where('status', 'Available')->count();
-        $pendingProperties = Property::where('status', 'Pending')->count();
+        $user = auth()->user();
         
-        // Total users (clients)
-        $totalUsers = User::count();
+        // Build base query with SAAS logic
+        $baseQuery = Property::query();
+        if (!$user->hasRole('Super Admin')) {
+            // Regular users (dealers) see only their own properties
+            $baseQuery->where('added_by', $user->id);
+        }
         
-        // Calculate total property values
-        $totalPropertyValue = Property::sum('price');
-        $soldPropertiesValue = Property::where('status', 'Sold')->sum('price');
+        // Get real statistics from database (filtered by user if not Super Admin)
+        $totalProperties = (clone $baseQuery)->count();
+        $propertiesSold = (clone $baseQuery)->where('status', 'Sold')->count();
+        $propertiesRented = (clone $baseQuery)->where('status', 'Rented')->count();
+        $availableProperties = (clone $baseQuery)->where('status', 'Available')->count();
+        $pendingProperties = (clone $baseQuery)->where('status', 'Pending')->count();
         
-        // Property distribution by type
-        $propertyTypes = Property::select('type', DB::raw('count(*) as count'))
+        // Total users (only Super Admin sees all users)
+        if ($user->hasRole('Super Admin')) {
+            $totalUsers = User::count();
+        } else {
+            $totalUsers = 1; // Dealer sees themselves only
+        }
+        
+        // Calculate total property values (filtered)
+        $totalPropertyValue = (clone $baseQuery)->sum('price') ?? 0;
+        $soldPropertiesValue = (clone $baseQuery)->where('status', 'Sold')->sum('price') ?? 0;
+        
+        // Property distribution by type (filtered)
+        $propertyTypes = (clone $baseQuery)
+            ->select('type', DB::raw('count(*) as count'))
             ->groupBy('type')
             ->pluck('count', 'type')
             ->toArray();
             
-        // Properties by status
-        $propertyByStatus = Property::select('status', DB::raw('count(*) as count'))
+        // Properties by status (filtered)
+        $propertyByStatus = (clone $baseQuery)
+            ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->pluck('count', 'status')
             ->toArray();
             
-        // Monthly properties added (last 6 months)
-        $monthlyProperties = Property::select(
+        // Monthly properties added (last 6 months, filtered)
+        $monthlyProperties = (clone $baseQuery)
+            ->select(
                 DB::raw('MONTH(created_at) as month'),
                 DB::raw('YEAR(created_at) as year'),
                 DB::raw('count(*) as count')
@@ -55,34 +71,39 @@ class ReportsController extends Controller
             ->orderBy('month', 'desc')
             ->get();
             
-        // Recent properties (last 10)
-        $recentProperties = Property::with('creator')
+        // Recent properties (last 10, filtered)
+        $recentProperties = (clone $baseQuery)
+            ->with('creator')
             ->latest()
             ->limit(10)
             ->get();
             
-        // Top property cities
-        $topCities = Property::select('city', DB::raw('count(*) as count'))
+        // Top property cities (filtered)
+        $topCities = (clone $baseQuery)
+            ->select('city', DB::raw('count(*) as count'))
+            ->whereNotNull('city')
             ->groupBy('city')
             ->orderBy('count', 'desc')
             ->limit(10)
             ->get();
             
-        // Average price by property type
-        $avgPriceByType = Property::select('type', DB::raw('AVG(price) as avg_price'))
+        // Average price by property type (filtered)
+        $avgPriceByType = (clone $baseQuery)
+            ->select('type', DB::raw('AVG(price) as avg_price'))
+            ->whereNotNull('price')
             ->groupBy('type')
             ->get()
             ->mapWithKeys(function ($item) {
                 return [$item->type => round($item->avg_price, 2)];
             });
             
-        // Price range distribution
+        // Price range distribution (filtered)
         $priceRanges = [
-            'Under ₹10L' => Property::where('price', '<', 1000000)->count(),
-            '₹10L - ₹50L' => Property::whereBetween('price', [1000000, 5000000])->count(),
-            '₹50L - ₹1Cr' => Property::whereBetween('price', [5000000, 10000000])->count(),
-            '₹1Cr - ₹2Cr' => Property::whereBetween('price', [10000000, 20000000])->count(),
-            'Above ₹2Cr' => Property::where('price', '>', 20000000)->count(),
+            'Under ₹10L' => (clone $baseQuery)->where('price', '<', 1000000)->count(),
+            '₹10L - ₹50L' => (clone $baseQuery)->whereBetween('price', [1000000, 5000000])->count(),
+            '₹50L - ₹1Cr' => (clone $baseQuery)->whereBetween('price', [5000000, 10000000])->count(),
+            '₹1Cr - ₹2Cr' => (clone $baseQuery)->whereBetween('price', [10000000, 20000000])->count(),
+            'Above ₹2Cr' => (clone $baseQuery)->where('price', '>', 20000000)->count(),
         ];
 
         return view('reports.index', compact(

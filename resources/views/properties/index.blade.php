@@ -34,8 +34,9 @@
                                 <table class="table align-items-center mb-0">
                                     <thead>
                                         <tr>
-                                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">#</th>
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">#</th>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Property</th>
+                                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Image</th>
                                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Type & Details</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Price</th>
                                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
@@ -44,14 +45,10 @@
                                     </thead>
                                     <tbody>
                                         @can('show-property')
-                                        @forelse($properties as $property)
+                                        @forelse($properties as $index => $property)
                                         <tr>
-                                            <td>
-                                                <div class="d-flex px-2 py-1">
-                                                    <div class="d-flex flex-column justify-content-center">
-                                                        <h6 class="mb-0 text-sm">{{ $property->id }}</h6>
-                                                    </div>
-                                                </div>
+                                            <td class="align-middle text-center">
+                                                <h6 class="mb-0 text-sm">{{ $properties->firstItem() + $index }}</h6>
                                             </td>
                                             <td>
                                                 <div class="d-flex px-2 py-1">
@@ -60,6 +57,33 @@
                                                         <p class="text-xs text-secondary mb-0">{{ $property->address }}, {{ $property->city }}</p>
                                                     </div>
                                                 </div>
+                                            </td>
+                                            <td class="align-middle text-center">
+                                                @php
+                                                    $images = $property->images;
+                                                    // Handle both array and string cases
+                                                    if (is_string($images)) {
+                                                        $images = json_decode($images, true) ?: [];
+                                                    } elseif (!is_array($images)) {
+                                                        $images = [];
+                                                    }
+                                                    $imageCount = count($images);
+                                                @endphp
+                                                
+                                                @if($imageCount > 0)
+                                                    <div class="avatar avatar-sm me-3 rounded-3 position-relative cursor-pointer" style="width: 60px; height: 45px;" data-bs-toggle="tooltip" data-bs-title="View property images">
+                                                        <img src="{{ asset('storage/' . $images[0]) }}" alt="{{ $property->title }}" class="w-100 h-100 rounded-3" style="object-fit: cover;">
+                                                        @if($imageCount > 1)
+                                                            <div class="position-absolute top-0 end-0 bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 18px; height: 18px; font-size: 10px; margin: -2px;">
+                                                                {{ $imageCount }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <div class="avatar avatar-sm bg-gradient-secondary rounded-3 d-flex align-items-center justify-content-center mx-auto" style="width: 60px; height: 45px;" data-bs-toggle="tooltip" data-bs-title="No images available">
+                                                        <i class="material-icons text-white opacity-10" style="font-size: 18px;">image_not_supported</i>
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td>
                                                 <p class="text-xs text-secondary mb-0">{{ $property->type }}</p>

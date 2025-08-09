@@ -13,20 +13,26 @@ return new class extends Migration
     {
         Schema::create('properties', function (Blueprint $table) {
             $table->id();
+            
+            // Required fields only
             $table->string('title');
-            $table->text('description')->nullable();
-            $table->string('address');
-            $table->string('city');
-            $table->string('state');
-            $table->string('pincode');
             $table->enum('type', ['House', 'Apartment', 'Villa', 'Plot', 'Commercial']);
+            $table->enum('status', ['Available', 'Pending', 'Sold', 'Rented'])->default('Available');
+            
+            // Optional fields
+            $table->text('description')->nullable();
+            $table->string('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('pincode')->nullable();
             $table->integer('bedrooms')->nullable();
             $table->integer('bathrooms')->nullable();
-            $table->decimal('area', 10, 2); // Area in sq ft
-            $table->decimal('price', 15, 2); // Price in INR
-            $table->enum('status', ['Available', 'Pending', 'Sold', 'Rented'])->default('Available');
+            $table->decimal('area', 10, 2)->nullable(); // Area in sq ft
+            $table->decimal('price', 15, 2)->nullable(); // Price in INR
             $table->json('images')->nullable(); // Store image paths as JSON
             $table->json('features')->nullable(); // Store property features as JSON
+            
+            // Foreign key
             $table->foreignId('added_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });

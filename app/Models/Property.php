@@ -70,4 +70,24 @@ class Property extends Model
             default => 'bg-gradient-secondary'
         };
     }
+
+    // Get main image URL
+    public function getMainImageAttribute()
+    {
+        if ($this->images && count($this->images) > 0) {
+            return asset('storage/' . $this->images[0]);
+        }
+        return null;
+    }
+
+    // Get all image URLs
+    public function getImageUrlsAttribute()
+    {
+        if ($this->images && count($this->images) > 0) {
+            return array_map(function($image) {
+                return asset('storage/' . $image);
+            }, $this->images);
+        }
+        return [];
+    }
 }
